@@ -1,4 +1,5 @@
 import { delay } from '@/lib/utils'
+import { firebaseAuth } from '@/auth/firebase'
 import type {
   ActivityEvent,
   AgentRun,
@@ -48,9 +49,14 @@ export interface AnalysisInput {
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   if (!BASE_URL) return mockRequest<T>(path)
 
+  const headers = new Headers(init?.headers)
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+  const firebaseUser = firebaseAuth?.currentUser
+  if (firebaseUser) headers.set('Authorization', `Bearer ${await firebaseUser.getIdToken()}`)
+
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
     ...init,
+    headers,
   })
   if (!res.ok) throw new ApiError(`Request failed: ${res.status}`, res.status)
   return res.json() as Promise<T>

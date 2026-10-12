@@ -170,8 +170,9 @@ export function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
             <DropdownItem
               className="text-rose-600 [&_svg]:text-rose-500"
               onSelect={() => {
-                signOut()
-                navigate('/login')
+                void signOut()
+                  .then(() => navigate('/login'))
+                  .catch(() => toast({ title: 'Sign-out failed', description: 'Please try again.', tone: 'error' }))
               }}
             >
               <LogOut /> Sign out

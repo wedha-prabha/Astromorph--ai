@@ -27,14 +27,16 @@ import { SettingsPage } from '@/pages/Settings'
 import { NotFoundPage } from '@/pages/NotFound'
 
 function RequireAuth({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
   const location = useLocation()
+  if (isLoading) return <div className="p-8 text-sm text-mutedfg">Checking your session…</div>
   if (!isAuthenticated) return <Navigate to="/login" state={{ from: location.pathname }} replace />
   return <>{children}</>
 }
 
 function RedirectIfAuthed({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
+  if (isLoading) return <div className="p-8 text-sm text-mutedfg">Checking your session…</div>
   if (isAuthenticated) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }

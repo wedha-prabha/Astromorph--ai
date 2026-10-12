@@ -1,17 +1,38 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { sendPasswordResetEmail } from 'firebase/auth'
 import { AuthLayout } from '@/pages/auth/AuthLayout'
 import { Button } from '@/components/ui/button'
 import { Input, Label } from '@/components/ui/input'
 import { CheckCircle2 } from 'lucide-react'
+import { firebaseAuth } from '@/auth/firebase'
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (/^\S+@\S+\.\S+$/.test(email)) setSent(true)
+    setError(null)
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setError('Please enter a valid work email address.')
+      return
+    }
+    if (!firebaseAuth) {
+      setSent(true)
+      return
+    }
+    setIsLoading(true)
+    try {
+      await sendPasswordResetEmail(firebaseAuth, email)
+      setSent(true)
+    } catch {
+      setError('Unable to send the reset email. Check the address and try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -31,8 +52,9 @@ export function ForgotPasswordPage() {
             <Label htmlFor="reset-email">Work email</Label>
             <Input id="reset-email" type="email" placeholder="researcher@institute.org" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
-          <Button type="submit" size="lg" className="w-full">
-            Send reset link
+          {error && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+          <Button type="submit" size="lg" className="w-full" loading={isLoading}>
+            {isLoading ? 'Sending…' : 'Send reset link'}
           </Button>
         </form>
       )}

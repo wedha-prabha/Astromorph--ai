@@ -20,6 +20,9 @@ import type {
  * no component imports mock data or calls fetch directly.
  */
 export const endpoints = {
+  // authentication
+  getCurrentUser: () => apiRequest<FirebaseIdentity>('/api/auth/me'),
+
   // analyses
   listAnalyses: () => apiRequest<AnalysisSummary[]>('/api/analyses'),
   getAnalysis: (id: string) => apiRequest<Analysis>(`/api/analyses/${id}`),
@@ -51,6 +54,14 @@ export const endpoints = {
   // workspace
   listSaved: () => apiRequest<SavedItem[]>('/api/saved'),
   listNotifications: () => apiRequest<NotificationItem[]>('/api/notifications'),
+}
+
+export interface FirebaseIdentity {
+  uid: string
+  email: string | null
+  name: string | null
+  email_verified: boolean
+  picture: string | null
 }
 
 export interface TrialFilters {
