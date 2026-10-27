@@ -1,6 +1,6 @@
 import { BookMarked, BookOpenText, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { RelevanceMeter, EvidenceBadge } from '@/components/shared/evidence-badge'
+import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ErrorState, LoadingState, NoResults } from '@/components/shared/states'
 import { Badge } from '@/components/ui/badge'
@@ -15,7 +15,8 @@ const levels = ['All', 'Meta-analysis', 'RCT', 'Observational', 'Preclinical', '
 const studyTypes = ['All', 'Systematic review', 'Randomized controlled trial', 'Cross-sectional', 'Prospective cohort', 'Animal study', 'Cell culture', 'Review / in silico', 'Narrative review', 'Mendelian randomization', 'Spontaneous-report analysis']
 
 export function LiteratureExplorerPage() {
-  const [q, setQ] = useState('')
+  const [params] = useSearchParams()
+  const [q, setQ] = useState(params.get('q') ?? '')
   const [level, setLevel] = useState('All')
   const [journal, setJournal] = useState('All')
   const [studyType, setStudyType] = useState('All')
@@ -51,7 +52,7 @@ export function LiteratureExplorerPage() {
       <PageHeader
         eyebrow="Literature"
         title="Biomedical literature explorer"
-        subtitle="Search the publications corpus retrieved by ASTROMORPH agents. Each result includes relevance scoring and study classification."
+        subtitle="Search current PubMed records. Abstracts and publication types are shown as supplied by PubMed; records refresh every 15 minutes."
       />
 
       {/* Search + filters */}
@@ -98,15 +99,15 @@ export function LiteratureExplorerPage() {
         <LoadingState rows={5} label="Searching literature corpus" />
       ) : isError ? (
         <ErrorState onRetry={() => refetch()} />
-      ) : !papers || papers.length === 0 ? (
+      ) : !papers || papers.items.length === 0 ? (
         <NoResults query={[q, level !== 'All' && level].filter(Boolean).join(', ')} onClear={() => { setQ(''); setLevel('All'); setJournal('All'); setStudyType('All'); setYearFrom('') }} />
       ) : (
         <>
           <p className="mb-3 text-xs font-medium text-slate-400" aria-live="polite">
-            {papers.length} publication{papers.length === 1 ? '' : 's'} found
+            Showing {papers.items.length} of {papers.total.toLocaleString()} matching PubMed records
           </p>
           <div className="space-y-3">
-            {papers.map((p) => (
+            {papers.items.map((p) => (
               <Card key={p.id} className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift">
                 <CardContent className="p-5">
                   <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
@@ -114,20 +115,19 @@ export function LiteratureExplorerPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-[11px] text-slate-400">PMID {p.pmid}</span>
                         <Badge variant="outline">{p.studyType}</Badge>
-                        <Badge variant="neutral">{p.evidenceLevel}</Badge>
+                          <Badge variant="neutral">PubMed</Badge>
                       </div>
                       <h3 className="mt-1.5 text-[15px] font-semibold leading-snug text-navy-900">{p.title}</h3>
                       <p className="mt-1 text-[13px] text-mutedfg">
                         {p.authors} · <span className="italic">{p.journal}</span> · {p.year}
                       </p>
                     </div>
-                    <RelevanceMeter value={p.relevanceScore} />
                   </div>
                   <p className="mt-3 border-l-2 border-line pl-3 text-sm leading-relaxed text-mutedfg">
                     …{p.abstractSnippet}
                   </p>
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3.5 no-print">
-                    <EvidenceBadge band={p.relevanceScore >= 85 ? 'Strong' : p.relevanceScore >= 70 ? 'Moderate' : 'Preliminary'} score={undefined} />
+                    <span className="text-xs text-mutedfg">Evidence not scored by PubMed</span>
                     <div className="flex gap-2">
                       <Button variant="ghost" size="sm" onClick={() => window.open(`https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/`, '_blank')}>
                         View evidence

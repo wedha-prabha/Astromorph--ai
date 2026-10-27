@@ -4,7 +4,9 @@ import { AuthLayout } from '@/pages/auth/AuthLayout'
 import { Button } from '@/components/ui/button'
 import { Input, Label } from '@/components/ui/input'
 import { useAuth } from '@/auth/AuthContext'
+import { firebaseAuth } from '@/auth/firebase'
 import { useToast } from '@/components/ui/toast'
+import { getAuthErrorMessage } from '@/auth/errorMessages'
 
 function GoogleIcon() {
   return (
@@ -21,7 +23,7 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const { signIn, signInDemo, isLoading } = useAuth()
+  const { signIn, signInWithGoogle, signInDemo, isLoading } = useAuth()
   const navigate = useNavigate()
   const location = useLocation() as { state?: { from?: string } }
   const { toast } = useToast()
@@ -35,8 +37,8 @@ export function LoginPage() {
       await signIn(email, password)
       toast({ title: 'Welcome back', description: 'Signed in to the ASTROMORPH workspace.' })
       navigate(location.state?.from ?? '/dashboard', { replace: true })
-    } catch {
-      setError('Sign-in failed. Please try again.')
+    } catch (error) {
+      setError(getAuthErrorMessage(error, 'Sign-in failed. Please try again.'))
     }
   }
 
@@ -45,23 +47,32 @@ export function LoginPage() {
       title="Sign in to ASTROMORPH"
       subtitle="Access your research workspace and active analyses."
     >
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full"
-        size="lg"
-        onClick={async () => {
-          await signInDemo()
-          toast({ title: 'Signed in with Google', description: 'Demo account: Dr. Elena Fisher.', tone: 'info' })
-          navigate('/dashboard')
-        }}
-      >
-        <GoogleIcon /> Continue with Google
-      </Button>
+      {firebaseAuth && (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          size="lg"
+          loading={isLoading}
+          onClick={async () => {
+            try {
+              await signInWithGoogle()
+              toast({ title: 'Signed in with Google', description: 'Welcome to the ASTROMORPH workspace.' })
+              navigate('/dashboard')
+            } catch (error) {
+              setError(getAuthErrorMessage(error, 'Google sign-in failed. Please try again.'))
+            }
+          }}
+        >
+          <GoogleIcon /> Continue with Google
+        </Button>
+      )}
 
-      <div className="my-5 flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-slate-400">
-        <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
-      </div>
+      {firebaseAuth && (
+        <div className="my-5 flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-slate-400">
+          <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div className="space-y-1.5">
@@ -96,7 +107,7 @@ export function LoginPage() {
         </Button>
       </form>
 
-      <button
+      {!firebaseAuth && <button
         type="button"
         onClick={async () => {
           await signInDemo()
@@ -105,7 +116,7 @@ export function LoginPage() {
         className="mt-4 w-full rounded-lg border border-dashed border-primary-300 bg-primary-50/60 px-4 py-2.5 text-sm font-medium text-primary-800 transition-colors hover:bg-primary-50"
       >
         Skip ahead with the demo researcher account →
-      </button>
+      </button>}
 
       <p className="mt-6 text-center text-sm text-mutedfg">
         New to ASTROMORPH?{' '}

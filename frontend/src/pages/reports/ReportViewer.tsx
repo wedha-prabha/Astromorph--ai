@@ -8,7 +8,7 @@ import { useToast } from '@/components/ui/toast'
 import { useReport } from '@/api/hooks'
 
 export function ReportViewerPage() {
-  const { id = 'RPT-2026-001' } = useParams()
+  const { id } = useParams()
   const { data: report, isLoading, isError, refetch } = useReport(id)
   const { toast } = useToast()
 

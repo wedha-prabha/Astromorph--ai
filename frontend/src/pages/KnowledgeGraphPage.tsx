@@ -7,7 +7,7 @@ import { useKnowledgeGraph } from '@/api/hooks'
 
 export function KnowledgeGraphPage() {
   const [params] = useSearchParams()
-  const analysisId = params.get('analysis') ?? 'AST-2026-001'
+  const analysisId = params.get('analysis') ?? undefined
   const { data, isLoading, isError, refetch } = useKnowledgeGraph(analysisId)
 
   return (
@@ -17,10 +17,11 @@ export function KnowledgeGraphPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-primary-600">Knowledge graph</p>
           <h1 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">Biomedical relationship explorer</h1>
           <p className="mt-1 text-sm text-mutedfg">
-            Drug–target–pathway–disease network for analysis{' '}
-            <Link to={`/analyses/${analysisId}`} className="font-mono text-primary-700 hover:underline">
-              {analysisId}
-            </Link>
+            {analysisId ? (
+              <>Drug–target–pathway–disease network for analysis{' '}
+                <Link to={`/analyses/${analysisId}`} className="font-mono text-primary-700 hover:underline">{analysisId}</Link>
+              </>
+            ) : 'Live graph data is available after a saved analysis is created.'}
           </p>
         </div>
         <Button variant="outline" asChild>
@@ -28,7 +29,11 @@ export function KnowledgeGraphPage() {
         </Button>
       </div>
 
-      {isLoading ? (
+      {!analysisId ? (
+        <div className="rounded-xl border border-line bg-surface p-6 text-sm text-mutedfg">
+          No saved analysis is available to graph yet. Graph relationships are not inferred from unrelated records.
+        </div>
+      ) : isLoading ? (
         <LoadingState rows={4} label="Building graph layout" />
       ) : isError || !data ? (
         <ErrorState onRetry={() => refetch()} />

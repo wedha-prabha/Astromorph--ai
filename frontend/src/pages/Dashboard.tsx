@@ -1,14 +1,5 @@
-import { ArrowRight, BookOpenText, FlaskConical, GitBranch, Plus, ScrollText, ShieldCheck } from 'lucide-react'
+import { Activity, ArrowRight, BookOpenText, FlaskConical, GitBranch, Plus, ScrollText, ShieldCheck } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip as ReTooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import { KpiCard } from '@/components/shared/KpiCard'
 import { EvidenceBadge, StatusPill } from '@/components/shared/evidence-badge'
 import { DisclaimerBanner } from '@/components/shared/PageHeader'
@@ -16,27 +7,9 @@ import { ErrorState, LoadingState } from '@/components/shared/states'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableWrapper, TBody, TD, TH, THead, TR } from '@/components/ui/table'
-import { useActivity, useAnalyses } from '@/api/hooks'
+import { useActivity, useAnalyses, useStats } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthContext'
-import { kpiStats } from '@/api/mock/report'
 import { formatRelativeTime } from '@/lib/utils'
-
-const chartData = [
-  { day: 'Aug 11', papers: 42, trials: 6 },
-  { day: 'Aug 12', papers: 55, trials: 4 },
-  { day: 'Aug 13', papers: 38, trials: 8 },
-  { day: 'Aug 14', papers: 71, trials: 5 },
-  { day: 'Aug 15', papers: 64, trials: 9 },
-  { day: 'Aug 16', papers: 88, trials: 7 },
-  { day: 'Aug 17', papers: 59, trials: 3 },
-  { day: 'Aug 18', papers: 76, trials: 11 },
-  { day: 'Aug 19', papers: 92, trials: 8 },
-  { day: 'Aug 20', papers: 84, trials: 6 },
-  { day: 'Aug 21', papers: 118, trials: 12 },
-  { day: 'Aug 22', papers: 96, trials: 9 },
-  { day: 'Aug 23', papers: 132, trials: 14 },
-  { day: 'Aug 24', papers: 148, trials: 10 },
-]
 
 const activityIcons = {
   literature: BookOpenText,
@@ -52,6 +25,7 @@ export function DashboardPage() {
   const navigate = useNavigate()
   const { data: analyses, isLoading, isError, refetch } = useAnalyses()
   const { data: activity } = useActivity()
+  const { data: stats, isLoading: statsLoading, isError: statsError } = useStats()
 
   return (
     <div className="animate-fade-up">
@@ -61,7 +35,9 @@ export function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight text-navy-900">
             Good morning, {user?.name.replace(/^Dr\.\s*/, '') || 'Researcher'}
           </h1>
-          <p className="mt-1 text-sm text-mutedfg">Explore evidence-backed drug repurposing opportunities.</p>
+          <p className="mt-1 text-sm text-mutedfg">
+            Current records from PubMed and ClinicalTrials.gov. Public-source data refreshes every 15 minutes.
+          </p>
         </div>
         <Button size="lg" onClick={() => navigate('/analyses/new')} className="self-start">
           <Plus /> New Drug Analysis
@@ -69,53 +45,48 @@ export function DashboardPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        {kpiStats.map((s) => (
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {(stats ?? []).map((s) => (
           <KpiCard key={s.id} stat={s} />
         ))}
       </div>
 
-      {/* Chart + Activity */}
+      {/* Current source data */}
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle>Evidence processed</CardTitle>
-              <p className="mt-0.5 text-xs text-mutedfg">Publications & trials indexed · last 14 days</p>
-            </div>
-            <EvidenceBadge band="Strong" score={87} />
+          <CardHeader>
+            <CardTitle>Live research sources</CardTitle>
+            <p className="mt-0.5 text-xs text-mutedfg">Counts and records queried from their public registries</p>
           </CardHeader>
-          <CardContent className="h-[260px] pt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -18 }}>
-                <defs>
-                  <linearGradient id="papersFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#269C8E" stopOpacity={0.28} />
-                    <stop offset="100%" stopColor="#269C8E" stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="trialsFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0891B2" stopOpacity={0.22} />
-                    <stop offset="100%" stopColor="#0891B2" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 6" stroke="#E9EEF4" vertical={false} />
-                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94A3B8' }} tickLine={false} axisLine={{ stroke: '#E9EEF4' }} interval={2} />
-                <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} tickLine={false} axisLine={false} />
-                <ReTooltip
-                  contentStyle={{ borderRadius: 12, border: '1px solid #E4EAF1', boxShadow: '0 8px 24px rgba(12,29,51,.1)', fontSize: 13 }}
-                  labelStyle={{ fontWeight: 700, color: '#0C1D33' }}
-                />
-                <Area type="monotone" dataKey="papers" name="Publications" stroke="#158276" strokeWidth={2.2} fill="url(#papersFill)" />
-                <Area type="monotone" dataKey="trials" name="Trials" stroke="#0891B2" strokeWidth={2} fill="url(#trialsFill)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <CardContent className="space-y-4">
+            {statsLoading ? (
+              <p className="text-sm text-mutedfg">Loading current source counts…</p>
+            ) : statsError ? (
+              <p className="text-sm text-rose-700" role="alert">
+                Live source counts are unavailable. Check the API connection and retry.
+              </p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {(stats ?? []).map((stat) => (
+                  <li key={stat.id} className="flex flex-col gap-1 py-3 first:pt-0 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-sm font-medium text-navy-800">{stat.hint}</span>
+                    <span className="font-mono text-sm text-mutedfg">{stat.value} · {stat.delta}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="text-xs text-slate-400">
+              Sources: <a className="text-primary-700 hover:underline" href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noreferrer">PubMed</a>
+              {' · '}
+              <a className="text-primary-700 hover:underline" href="https://clinicaltrials.gov/" target="_blank" rel="noreferrer">ClinicalTrials.gov</a>
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle>Research Activity</CardTitle>
-            <span className="text-xs text-mutedfg">Today</span>
+            <CardTitle>Latest source records</CardTitle>
+            <span className="text-xs text-mutedfg">Live</span>
           </CardHeader>
           <CardContent className="max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
             <ol className="relative space-y-5 border-l border-line pl-5">
@@ -196,6 +167,13 @@ export function DashboardPage() {
                       </TD>
                     </TR>
                   ))}
+                  {(analyses ?? []).length === 0 && (
+                    <TR>
+                      <TD colSpan={7} className="py-8 text-center text-sm text-mutedfg">
+                        No saved analyses yet. Use New Drug Analysis to start a live evidence search.
+                      </TD>
+                    </TR>
+                  )}
                 </TBody>
               </Table>
             </TableWrapper>

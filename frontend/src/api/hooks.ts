@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { endpoints, type LiteratureFilters, type TrialFilters } from '@/api/endpoints'
+import { endpoints, type DrugSummaryInput, type LiteratureFilters, type TrialFilters } from '@/api/endpoints'
 
 export const queryKeys = {
   analyses: ['analyses'] as const,
@@ -9,9 +9,9 @@ export const queryKeys = {
   graph: (id: string) => ['graph', id] as const,
   report: (id: string) => ['report', id] as const,
   activity: ['activity'] as const,
-  drugs: ['drugs'] as const,
+  drugs: (query: string) => ['drugs', query] as const,
   drug: (id: string) => ['drug', id] as const,
-  diseases: ['diseases'] as const,
+  diseases: (query: string) => ['diseases', query] as const,
   disease: (id: string) => ['disease', id] as const,
   trials: (f: TrialFilters) => ['trials', f] as const,
   literature: (f: LiteratureFilters) => ['literature', f] as const,
@@ -21,6 +21,17 @@ export const queryKeys = {
 
 export function useAnalyses() {
   return useQuery({ queryKey: queryKeys.analyses, queryFn: endpoints.listAnalyses })
+}
+
+export function useDrugSummary(input: DrugSummaryInput | null) {
+  return useQuery({
+    queryKey: ['drug-summary', input?.drugName ?? '', input?.diseaseName ?? '', input?.objective ?? ''],
+    queryFn: () => endpoints.summarizeDrug(input!),
+    enabled: !!input,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  })
 }
 
 export function useAnalysis(id: string | undefined) {
@@ -51,16 +62,28 @@ export function useActivity() {
   return useQuery({ queryKey: queryKeys.activity, queryFn: endpoints.getActivity })
 }
 
-export function useDrugs() {
-  return useQuery({ queryKey: queryKeys.drugs, queryFn: endpoints.listDrugs })
+export function useStats() {
+  return useQuery({ queryKey: ['stats'], queryFn: endpoints.getStats })
+}
+
+export function useDrugs(query = '') {
+  return useQuery({
+    queryKey: queryKeys.drugs(query),
+    queryFn: () => endpoints.listDrugs(query),
+    enabled: query.trim().length >= 2,
+  })
 }
 
 export function useDrug(id: string | undefined) {
   return useQuery({ queryKey: queryKeys.drug(id ?? ''), queryFn: () => endpoints.getDrug(id!), enabled: !!id })
 }
 
-export function useDiseases() {
-  return useQuery({ queryKey: queryKeys.diseases, queryFn: endpoints.listDiseases })
+export function useDiseases(query = '') {
+  return useQuery({
+    queryKey: queryKeys.diseases(query),
+    queryFn: () => endpoints.listDiseases(query),
+    enabled: query.trim().length >= 2,
+  })
 }
 
 export function useDisease(id: string | undefined) {

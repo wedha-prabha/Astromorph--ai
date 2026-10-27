@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sheet, SheetContent, DialogTitle } from '@/components/ui/dialog'
-import { Label, Select } from '@/components/ui/input'
+import { Input, Label, Select } from '@/components/ui/input'
 import { Table, TableWrapper, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { useTrials } from '@/api/hooks'
 import type { ClinicalTrial } from '@/types'
@@ -16,37 +16,21 @@ import { formatDate } from '@/lib/utils'
 
 const phases = ['All', 'Phase 1', 'Phase 2', 'Phase 3', 'Phase 4'] as const
 const statuses = ['All', 'Recruiting', 'Completed', 'Active, not recruiting', 'Terminated', 'Not yet recruiting'] as const
-const countries = ['All', 'United States', 'United Kingdom', 'Germany', 'Netherlands', 'Egypt', 'Canada', 'Brazil', 'China', 'Spain'] as const
-const sponsors = [
-  'All',
-  'Helix Research Institute',
-  'University of Groningen',
-  'Assiut University',
-  'National Heart, Lung, and Blood Institute (NHLBI)',
-  "Children's Hospital Boston",
-  'AstraZeneca',
-  'Chiesi Farmaceutici',
-  'GlaxoSmithKline',
-  'Merck Sharp & Dohme',
-  'European Respiratory Society',
-] as const
-const drugFilters = ['All', 'Montelukast', 'Zileuton', 'Roflumilast'] as const
-
 export function ClinicalTrialsPage() {
   const [params] = useSearchParams()
-  const [drug, setDrug] = useState(params.get('drug') ?? 'All')
+  const [drug, setDrug] = useState(params.get('drug') ?? '')
   const [phase, setPhase] = useState('All')
   const [status, setStatus] = useState('All')
-  const [country, setCountry] = useState('All')
-  const [sponsor, setSponsor] = useState('All')
+  const [country, setCountry] = useState('')
+  const [sponsor, setSponsor] = useState('')
   const [selectedTrial, setSelectedTrial] = useState<ClinicalTrial | null>(null)
 
   const filters = {
-    drug: drug === 'All' ? undefined : drug,
+    drug: drug.trim() || undefined,
     phase: phase === 'All' ? undefined : phase,
     status: status === 'All' ? undefined : status,
-    country: country === 'All' ? undefined : country,
-    sponsor: sponsor === 'All' ? undefined : sponsor,
+    country: country.trim() || undefined,
+    sponsor: sponsor.trim() || undefined,
   }
   const { data: trials, isLoading, isError, refetch } = useTrials(filters)
 
@@ -62,10 +46,8 @@ export function ClinicalTrialsPage() {
       <Card className="mb-5">
         <CardContent className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-1.5">
-            <Label htmlFor="f-drug">Drug</Label>
-            <Select id="f-drug" value={drug} onChange={(e) => setDrug(e.target.value)}>
-              {drugFilters.map((d) => <option key={d}>{d}</option>)}
-            </Select>
+            <Label htmlFor="f-drug">Drug or intervention</Label>
+            <Input id="f-drug" value={drug} onChange={(e) => setDrug(e.target.value)} placeholder="Any intervention" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="f-phase">Phase</Label>
@@ -81,15 +63,11 @@ export function ClinicalTrialsPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="f-country">Country</Label>
-            <Select id="f-country" value={country} onChange={(e) => setCountry(e.target.value)}>
-              {countries.map((c) => <option key={c}>{c}</option>)}
-            </Select>
+            <Input id="f-country" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Any country" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="f-sponsor">Sponsor</Label>
-            <Select id="f-sponsor" value={sponsor} onChange={(e) => setSponsor(e.target.value)}>
-              {sponsors.map((s) => <option key={s}>{s}</option>)}
-            </Select>
+            <Input id="f-sponsor" value={sponsor} onChange={(e) => setSponsor(e.target.value)} placeholder="Any sponsor" />
           </div>
         </CardContent>
       </Card>
@@ -98,17 +76,17 @@ export function ClinicalTrialsPage() {
         <LoadingState rows={5} label="Screening trial registry" />
       ) : isError ? (
         <ErrorState onRetry={() => refetch()} />
-      ) : !trials || trials.length === 0 ? (
+      ) : !trials || trials.items.length === 0 ? (
         <NoResults
           query={[drug, phase !== 'All' && phase, status !== 'All' && status].filter(Boolean).join(', ')}
           onClear={() => {
-            setDrug('All'); setPhase('All'); setStatus('All'); setCountry('All'); setSponsor('All')
+            setDrug(''); setPhase('All'); setStatus('All'); setCountry(''); setSponsor('')
           }}
         />
       ) : (
         <>
           <p className="mb-3 text-xs font-medium text-slate-400" aria-live="polite">
-            {trials.length} trial{trials.length === 1 ? '' : 's'} match current filters
+            {trials.items.length} live trial record{trials.items.length === 1 ? '' : 's'} returned
           </p>
           <Card>
             <CardHeader className="flex-row items-center gap-2 space-y-0">
@@ -124,7 +102,7 @@ export function ClinicalTrialsPage() {
                     </TR>
                   </THead>
                   <TBody>
-                    {trials.map((t) => (
+                    {trials.items.map((t) => (
                       <TR key={t.id} className="cursor-pointer" onClick={() => setSelectedTrial(t)}>
                         <TD><span className="font-mono text-xs font-semibold text-primary-700">{t.nctId}</span></TD>
                         <TD className="font-medium text-navy-900">{t.drug}</TD>

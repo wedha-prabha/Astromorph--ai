@@ -8,6 +8,7 @@ import type {
   Disease,
   Drug,
   EvidenceSource,
+  KpiStat,
   KnowledgeGraphData,
   NotificationItem,
   Paper,
@@ -20,7 +21,15 @@ import type {
  * no component imports mock data or calls fetch directly.
  */
 export const endpoints = {
+  // authentication
+  getCurrentUser: () => apiRequest<FirebaseIdentity>('/api/auth/me'),
+
   // analyses
+  summarizeDrug: (input: DrugSummaryInput) =>
+    apiRequest<DrugSummary>('/api/analysis/drug-summary', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   listAnalyses: () => apiRequest<AnalysisSummary[]>('/api/analyses'),
   getAnalysis: (id: string) => apiRequest<Analysis>(`/api/analyses/${id}`),
   getAnalysisAgents: (id: string) => apiRequest<AgentRun[]>(`/api/analyses/${id}/agents`),
@@ -36,21 +45,44 @@ export const endpoints = {
 
   // platform
   getActivity: () => apiRequest<ActivityEvent[]>('/api/activity'),
-  getStats: () => apiRequest<Record<string, never>[]>('/api/stats'),
+  getStats: () => apiRequest<KpiStat[]>('/api/stats'),
 
   // intelligence
-  listDrugs: () => apiRequest<Drug[]>('/api/drugs'),
+  listDrugs: (query?: string) => apiRequest<Drug[]>(withQ('/api/drugs', { query })),
   getDrug: (id: string) => apiRequest<Drug>(`/api/drugs/${id}`),
-  listDiseases: () => apiRequest<Disease[]>('/api/diseases'),
+  listDiseases: (query?: string) => apiRequest<Disease[]>(withQ('/api/diseases', { query })),
   getDisease: (id: string) => apiRequest<Disease>(`/api/diseases/${id}`),
 
   // explorers
-  listTrials: (filters?: TrialFilters) => apiRequest<ClinicalTrial[]>(withQ('/api/clinical-trials', filters)),
-  listLiterature: (filters?: LiteratureFilters) => apiRequest<Paper[]>(withQ('/api/literature', filters)),
+  listTrials: (filters?: TrialFilters) => apiRequest<SearchResults<ClinicalTrial>>(withQ('/api/clinical-trials', filters)),
+  listLiterature: (filters?: LiteratureFilters) => apiRequest<SearchResults<Paper>>(withQ('/api/literature', filters)),
 
   // workspace
   listSaved: () => apiRequest<SavedItem[]>('/api/saved'),
   listNotifications: () => apiRequest<NotificationItem[]>('/api/notifications'),
+}
+
+export interface DrugSummaryInput {
+  drugName: string
+  diseaseName: string
+  objective?: string
+}
+
+export interface DrugSummary {
+  summary: string
+}
+
+export interface SearchResults<T> {
+  items: T[]
+  total: number
+}
+
+export interface FirebaseIdentity {
+  uid: string
+  email: string | null
+  name: string | null
+  email_verified: boolean
+  picture: string | null
 }
 
 export interface TrialFilters {

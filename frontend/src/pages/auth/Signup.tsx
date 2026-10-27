@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input, Label, Select } from '@/components/ui/input'
 import { useAuth } from '@/auth/AuthContext'
 import { useToast } from '@/components/ui/toast'
+import { getAuthErrorMessage } from '@/auth/errorMessages'
 
 export function SignupPage() {
   const [form, setForm] = useState({ name: '', email: '', organization: '', role: 'Principal Investigator', password: '' })
@@ -27,8 +28,8 @@ export function SignupPage() {
       await signUp(form)
       toast({ title: 'Workspace created', description: 'Welcome to ASTROMORPH.' })
       navigate('/dashboard')
-    } catch {
-      setError('Account creation failed. Please try again.')
+    } catch (error) {
+      setError(getAuthErrorMessage(error, 'Account creation failed. Please try again.'))
     }
   }
 

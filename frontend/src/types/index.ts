@@ -138,7 +138,7 @@ export interface RepurposingCandidate {
 export interface AdverseEventEntry {
   event: string
   frequency: string
-  severity: 'common' | 'rare' | 'serious'
+  severity: 'common' | 'rare' | 'serious' | 'not-classified'
 }
 
 export interface Drug {
@@ -159,6 +159,8 @@ export interface Drug {
   repurposingCandidates: RepurposingCandidate[]
   stats: { trials: number; publications: number; pathways: number; targets: number }
   detailed: boolean
+  sourceUrl?: string
+  effectiveDate?: string
 }
 
 export interface DiseaseTreatment {
@@ -184,6 +186,7 @@ export interface Disease {
   candidates: RepurposingCandidate[]
   stats: { trials: number; publications: number; pathways: number; targets: number }
   detailed: boolean
+  sourceUrl?: string
 }
 
 export interface ClinicalTrial {
@@ -193,7 +196,7 @@ export interface ClinicalTrial {
   drug: string
   condition: string
   phase: 'Phase 1' | 'Phase 2' | 'Phase 3' | 'Phase 4' | 'N/A'
-  status: 'Recruiting' | 'Completed' | 'Active, not recruiting' | 'Terminated' | 'Not yet recruiting'
+  status: string
   sponsor: string
   startDate: string
   enrollment: number
@@ -209,6 +212,7 @@ export interface Paper {
   authors: string
   journal: string
   year: number
+  publicationDate?: string
   abstractSnippet: string
   relevanceScore: number
   evidenceLevel: string
