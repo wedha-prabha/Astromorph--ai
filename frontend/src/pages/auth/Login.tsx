@@ -6,6 +6,7 @@ import { Input, Label } from '@/components/ui/input'
 import { useAuth } from '@/auth/AuthContext'
 import { firebaseAuth } from '@/auth/firebase'
 import { useToast } from '@/components/ui/toast'
+import { getAuthErrorMessage } from '@/auth/errorMessages'
 
 function GoogleIcon() {
   return (
@@ -36,8 +37,8 @@ export function LoginPage() {
       await signIn(email, password)
       toast({ title: 'Welcome back', description: 'Signed in to the ASTROMORPH workspace.' })
       navigate(location.state?.from ?? '/dashboard', { replace: true })
-    } catch {
-      setError('Sign-in failed. Please try again.')
+    } catch (error) {
+      setError(getAuthErrorMessage(error, 'Sign-in failed. Please try again.'))
     }
   }
 
@@ -58,8 +59,8 @@ export function LoginPage() {
               await signInWithGoogle()
               toast({ title: 'Signed in with Google', description: 'Welcome to the ASTROMORPH workspace.' })
               navigate('/dashboard')
-            } catch {
-              setError('Google sign-in failed. Please try again.')
+            } catch (error) {
+              setError(getAuthErrorMessage(error, 'Google sign-in failed. Please try again.'))
             }
           }}
         >

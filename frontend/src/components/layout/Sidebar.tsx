@@ -1,6 +1,5 @@
 import {
   Activity,
-  Beaker,
   BookOpenText,
   FlaskConical,
   GitBranch,
@@ -41,7 +40,7 @@ export const navSections = [
     items: [
       { to: '/trials', icon: FlaskConical, label: 'Clinical Trials' },
       { to: '/literature', icon: BookOpenText, label: 'Literature' },
-      { to: '/agents', icon: GitBranch, label: 'Agent Observatory' },
+      { to: '/agents', icon: GitBranch, label: 'Data Sources' },
     ],
   },
   {
@@ -156,15 +155,6 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
               </a>
             </li>
           </ul>
-          <div className="mt-3 rounded-xl bg-gradient-to-br from-navy-900 to-navy-700 p-4 text-white">
-            <div className="flex items-center gap-2">
-              <Beaker className="size-4 text-cyan-300" aria-hidden />
-              <p className="text-xs font-semibold">Research environment</p>
-            </div>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-navy-200">
-              Demo workspace with simulated evidence data. Not for clinical use.
-            </p>
-          </div>
         </div>
       </aside>
     </>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input, Label } from '@/components/ui/input'
 import { CheckCircle2 } from 'lucide-react'
 import { firebaseAuth } from '@/auth/firebase'
+import { getAuthErrorMessage } from '@/auth/errorMessages'
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -28,8 +29,8 @@ export function ForgotPasswordPage() {
     try {
       await sendPasswordResetEmail(firebaseAuth, email)
       setSent(true)
-    } catch {
-      setError('Unable to send the reset email. Check the address and try again.')
+    } catch (error) {
+      setError(getAuthErrorMessage(error, 'Unable to send the reset email. Check the address and try again.'))
     } finally {
       setIsLoading(false)
     }

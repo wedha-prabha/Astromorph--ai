@@ -18,7 +18,7 @@ import { formatNumber, scoreToBand } from '@/lib/utils'
 const sourceTypeFilters = ['All', 'Literature', 'Clinical Trial', 'Safety', 'Molecular', 'Guideline'] as const
 
 export function AnalysisResultsPage() {
-  const { id = 'AST-2026-001' } = useParams()
+  const { id } = useParams()
   const navigate = useNavigate()
   const { data: analysis, isLoading, isError, refetch } = useAnalysis(id)
   const [typeFilter, setTypeFilter] = useState<(typeof sourceTypeFilters)[number]>('All')

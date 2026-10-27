@@ -15,9 +15,9 @@ import { useDisease, useDiseases } from '@/api/hooks'
 
 export function DiseaseIntelligencePage() {
   const [params, setParams] = useSearchParams()
-  const { data: diseases, isLoading: listLoading, isError } = useDiseases()
   const query = params.get('id') ?? 'copd'
   const [searchTerm, setSearchTerm] = useState('')
+  const { data: diseases, isError } = useDiseases(searchTerm)
 
   const suggestions = useMemo(() => {
     const q = searchTerm.trim().toLowerCase()
@@ -25,16 +25,17 @@ export function DiseaseIntelligencePage() {
     return (diseases ?? []).filter((d) => d.name.toLowerCase().includes(q)).slice(0, 5)
   }, [diseases, searchTerm])
 
-  const { data: disease, isLoading: detailLoading } = useDisease(query)
+  const { data: disease, isLoading: detailLoading, isError: detailError, refetch } = useDisease(query)
 
   if (isError) return <ErrorState />
+  if (detailError) return <ErrorState onRetry={() => refetch()} />
 
   return (
     <div className="animate-fade-up">
       <PageHeader
         eyebrow="Disease intelligence"
         title="Disease research profiles"
-        subtitle="Pathophysiology, biological pathways, genetic associations, treatment landscape, and candidate repurposing opportunities. For research intelligence — not patient diagnosis."
+        subtitle="Disease definitions and live publication/trial counts from public biomedical sources. Molecular associations and clinical guidance are shown only when supported by a connected source."
       />
 
       {/* Search */}
@@ -77,7 +78,7 @@ export function DiseaseIntelligencePage() {
         )}
       </div>
 
-      {listLoading || detailLoading || !disease ? (
+      {detailLoading || !disease ? (
         <LoadingState rows={3} label="Loading disease profile" />
       ) : (
         <>
@@ -90,10 +91,15 @@ export function DiseaseIntelligencePage() {
                 </span>
                 <div>
                   <h2 className="text-xl font-bold tracking-tight">{disease.name}</h2>
-                  <p className="mt-0.5 text-sm text-mutedfg">{disease.category} · ICD-10 {disease.icd10}</p>
+                  <p className="mt-0.5 text-sm text-mutedfg">{disease.category} · {disease.icd10}</p>
                   <p className="mt-1 text-xs text-slate-400">
-                    {disease.prevalence} · {disease.mortality}
+                    Disease Ontology term · population and mortality data are not supplied by this source
                   </p>
+                  {disease.sourceUrl && (
+                    <a href={disease.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-primary-700 hover:underline">
+                      View Disease Ontology record
+                    </a>
+                  )}
                 </div>
               </div>
               <dl className="grid grid-cols-3 gap-4 text-center sm:gap-8">
@@ -136,8 +142,10 @@ export function DiseaseIntelligencePage() {
                       ))}
                     </ul>
                     <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50/70 p-3.5">
-                      <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Unmet therapeutic need</p>
-                      <p className="mt-1 text-[13px] leading-relaxed text-amber-950/90">{disease.unmetNeed}</p>
+                      <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Clinical information</p>
+                      <p className="mt-1 text-[13px] leading-relaxed text-amber-950/90">
+                        {disease.symptoms.length ? 'Symptoms are listed only when present in the selected ontology record.' : 'The selected Disease Ontology record does not provide symptom or treatment guidance.'}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -159,6 +167,9 @@ export function DiseaseIntelligencePage() {
                           <p className="mt-0.5 text-[13px] leading-relaxed text-mutedfg">{p.role}</p>
                         </li>
                       ))}
+                      {disease.pathways.length === 0 && (
+                        <li className="text-sm text-mutedfg">Pathways are not supplied by the selected live source.</li>
+                      )}
                     </ul>
                   </CardContent>
                 </Card>
@@ -181,6 +192,9 @@ export function DiseaseIntelligencePage() {
                               <TD className="max-w-[220px] text-xs text-mutedfg">{g.association}</TD>
                             </TR>
                           ))}
+                          {disease.genes.length === 0 && (
+                            <TR><TD colSpan={3} className="py-4 text-center text-sm text-mutedfg">No gene associations are supplied by this source.</TD></TR>
+                          )}
                         </TBody>
                       </Table>
                     </TableWrapper>
@@ -192,6 +206,9 @@ export function DiseaseIntelligencePage() {
                           <span className="max-w-[55%] truncate text-right text-xs text-mutedfg" title={t.note}>{t.note}</span>
                         </div>
                       ))}
+                      {disease.proteinTargets.length === 0 && (
+                        <p className="text-sm text-mutedfg">No protein targets are supplied by this source.</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -215,6 +232,9 @@ export function DiseaseIntelligencePage() {
                             <TD><Badge variant="outline">{t.line}</Badge></TD>
                           </TR>
                         ))}
+                        {disease.treatments.length === 0 && (
+                          <TR><TD colSpan={3} className="py-6 text-center text-sm text-mutedfg">Treatment recommendations are not supplied by Disease Ontology.</TD></TR>
+                        )}
                       </TBody>
                     </Table>
                   </TableWrapper>
@@ -227,7 +247,7 @@ export function DiseaseIntelligencePage() {
                 <CardHeader className="flex-row items-center justify-between space-y-0">
                   <div>
                     <CardTitle>Potential repurposing candidates</CardTitle>
-                    <p className="mt-0.5 text-xs text-mutedfg">Ranked by research-evidence strength for this disease</p>
+                    <p className="mt-0.5 text-xs text-mutedfg">No candidate score is inferred from the disease definition.</p>
                   </div>
                   <Activity className="size-4 text-primary-600" aria-hidden />
                 </CardHeader>
@@ -260,6 +280,9 @@ export function DiseaseIntelligencePage() {
                             </TD>
                           </TR>
                         ))}
+                        {disease.candidates.length === 0 && (
+                          <TR><TD colSpan={5} className="py-6 text-center text-sm text-mutedfg">No live repurposing assessment is available for this disease.</TD></TR>
+                        )}
                       </TBody>
                     </Table>
                   </TableWrapper>

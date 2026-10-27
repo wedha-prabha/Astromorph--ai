@@ -16,9 +16,9 @@ import { useDrug, useDrugs, useLiterature, useTrials } from '@/api/hooks'
 
 export function DrugIntelligencePage() {
   const [params, setParams] = useSearchParams()
-  const { data: drugs, isLoading: listLoading, isError } = useDrugs()
   const query = params.get('id') ?? 'montelukast'
   const [searchTerm, setSearchTerm] = useState('')
+  const { data: drugs, isError } = useDrugs(searchTerm)
 
   const suggestions = useMemo(() => {
     const q = searchTerm.trim().toLowerCase()
@@ -26,11 +26,12 @@ export function DrugIntelligencePage() {
     return (drugs ?? []).filter((d) => d.name.toLowerCase().includes(q)).slice(0, 5)
   }, [drugs, searchTerm])
 
-  const { data: drug, isLoading: detailLoading } = useDrug(query)
+  const { data: drug, isLoading: detailLoading, isError: detailError, refetch } = useDrug(query)
   const { data: trials } = useTrials({ drug: drug?.name })
   const { data: papers } = useLiterature({ q: drug?.name.toLowerCase() })
 
   if (isError) return <ErrorState />
+  if (detailError) return <ErrorState onRetry={() => refetch()} />
 
   return (
     <div className="animate-fade-up">
@@ -80,7 +81,7 @@ export function DrugIntelligencePage() {
         )}
       </div>
 
-      {listLoading || detailLoading || !drug ? (
+      {detailLoading || !drug ? (
         <LoadingState rows={3} label="Loading drug profile" />
       ) : (
         <>
@@ -95,19 +96,18 @@ export function DrugIntelligencePage() {
                   <h2 className="text-xl font-bold tracking-tight">{drug.name}</h2>
                   <p className="mt-0.5 text-sm text-mutedfg">
                     {drug.brandNames.length > 0 && `${drug.brandNames.join(', ')} · `}
-                    Approved {drug.approvalYear} · ATC {drug.atcCode}
+                    FDA label {drug.effectiveDate ? `updated ${drug.effectiveDate}` : 'date not supplied'}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     <Badge variant="default">{drug.drugClass}</Badge>
-                    <Badge variant="neutral">{drug.stats.targets} targets</Badge>
-                    <Badge variant="neutral">{drug.stats.pathways} pathways</Badge>
+                    <Badge variant="neutral">ATC: {drug.atcCode}</Badge>
                   </div>
                 </div>
               </div>
               <dl className="grid grid-cols-3 gap-4 text-center sm:gap-8">
                 {[
-                  ['Publications', drug.stats.publications],
-                  ['Trials', drug.stats.trials],
+                  ['PubMed records', drug.stats.publications],
+                  ['ClinicalTrials.gov records', drug.stats.trials],
                   ['Repurposing candidates', drug.repurposingCandidates.length],
                 ].map(([label, value]) => (
                   <div key={String(label)}>
@@ -150,13 +150,13 @@ export function DrugIntelligencePage() {
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardHeader><CardTitle>Approved indications & status</CardTitle></CardHeader>
+                  <CardHeader><CardTitle>Indications in FDA label</CardTitle></CardHeader>
                   <CardContent>
                     <ul className="divide-y divide-line">
                       {drug.indications.map((ind) => (
                         <li key={ind.indication} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
                           <span className="text-sm font-medium text-navy-800">{ind.indication}</span>
-                          <Badge variant={ind.status === 'Approved' ? 'emerald' : 'amber'}>{ind.status}</Badge>
+                          <Badge variant="outline">{ind.status}</Badge>
                         </li>
                       ))}
                     </ul>
@@ -167,8 +167,8 @@ export function DrugIntelligencePage() {
               <Card>
                 <CardHeader className="flex-row items-center justify-between space-y-0">
                   <div>
-                    <CardTitle>Potential repurposing candidates</CardTitle>
-                    <p className="mt-0.5 text-xs text-mutedfg">Ranked by research-evidence strength across ASTROMORPH analyses</p>
+                    <CardTitle>Repurposing hypotheses</CardTitle>
+                    <p className="mt-0.5 text-xs text-mutedfg">No candidate score is inferred from this drug-label source.</p>
                   </div>
                   <Activity className="size-4 text-primary-600" aria-hidden />
                 </CardHeader>
@@ -207,6 +207,9 @@ export function DrugIntelligencePage() {
                             </TD>
                           </TR>
                         ))}
+                        {drug.repurposingCandidates.length === 0 && (
+                          <TR><TD colSpan={5} className="py-6 text-center text-sm text-mutedfg">No live repurposing assessment is available for this medicine.</TD></TR>
+                        )}
                       </TBody>
                     </Table>
                   </TableWrapper>
@@ -239,6 +242,16 @@ export function DrugIntelligencePage() {
                             <TD className="max-w-[280px] text-sm text-mutedfg">{t.role}</TD>
                           </TR>
                         ))}
+                        {drug.targets.length === 0 && (
+                          <TR><TD colSpan={4} className="py-6 text-center text-sm text-mutedfg">Molecular targets are not supplied by this FDA label.</TD></TR>
+                        )}
+                        {drug.targets.length === 0 && (
+                          <TR>
+                            <TD colSpan={4} className="py-6 text-center text-sm text-mutedfg">
+                              Molecular targets are not supplied by this FDA label.
+                            </TD>
+                          </TR>
+                        )}
                       </TBody>
                     </Table>
                   </TableWrapper>
@@ -288,7 +301,9 @@ export function DrugIntelligencePage() {
                         <li key={ae.event} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
                           <span className="text-sm font-medium text-navy-800">{ae.event}</span>
                           <span className="flex items-center gap-2">
-                            <Badge variant={ae.severity === 'serious' ? 'rose' : ae.severity === 'rare' ? 'amber' : 'neutral'}>{ae.severity}</Badge>
+                            <Badge variant={ae.severity === 'serious' ? 'rose' : ae.severity === 'rare' ? 'amber' : 'neutral'}>
+                              {ae.severity === 'not-classified' ? 'See label' : ae.severity}
+                            </Badge>
                             <span className="w-14 text-right text-xs tabular-nums text-mutedfg">{ae.frequency}</span>
                           </span>
                         </li>
@@ -312,7 +327,7 @@ export function DrugIntelligencePage() {
             </TabsContent>
 
             <TabsContent value="trials">
-              {!trials || trials.length === 0 ? (
+              {!trials || trials.items.length === 0 ? (
                 <NoResults query={drug.name} onClear={() => undefined} />
               ) : (
                 <Card>
@@ -329,7 +344,7 @@ export function DrugIntelligencePage() {
                           </TR>
                         </THead>
                         <TBody>
-                          {trials.slice(0, 6).map((t) => (
+                          {trials.items.slice(0, 6).map((t) => (
                             <TR key={t.id}>
                               <TD><span className="font-mono text-xs font-semibold text-primary-700">{t.nctId}</span></TD>
                               <TD className="max-w-[240px] truncate">{t.condition}</TD>
@@ -352,18 +367,18 @@ export function DrugIntelligencePage() {
             </TabsContent>
 
             <TabsContent value="literature">
-              {!papers || papers.length === 0 ? (
+              {!papers || papers.items.length === 0 ? (
                 <NoResults query={drug.name} onClear={() => undefined} />
               ) : (
                 <div className="space-y-3">
-                  {papers.slice(0, 5).map((p) => (
+                  {papers.items.slice(0, 5).map((p) => (
                     <Card key={p.id} className="p-5">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
                           <h3 className="text-[15px] font-semibold leading-snug">{p.title}</h3>
                           <p className="mt-1 text-xs text-mutedfg">{p.authors} · {p.journal} · {p.year}</p>
                         </div>
-                        <EvidenceBadge band={p.relevanceScore >= 85 ? 'Strong' : p.relevanceScore >= 70 ? 'Moderate' : 'Preliminary'} score={p.relevanceScore} />
+                        <Badge variant="outline">PubMed record</Badge>
                       </div>
                       <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-mutedfg">{p.abstractSnippet}</p>
                     </Card>

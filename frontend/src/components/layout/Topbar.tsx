@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, CircleDot, LogOut, Menu, Search, Settings as SettingsIcon, User } from 'lucide-react'
+import { Bell, ChevronDown, LogOut, Menu, Search, Settings as SettingsIcon, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CommandPalette } from '@/components/layout/CommandPalette'
@@ -14,11 +14,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useNotifications } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthContext'
 import { useToast } from '@/components/ui/toast'
-import { cn, formatRelativeTime } from '@/lib/utils'
+import { formatRelativeTime } from '@/lib/utils'
 
 export function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   const [searchOpen, setSearchOpen] = useState(false)
-  const [org, setOrg] = useState('Helix Research Institute')
   const { user, signOut } = useAuth()
   const { data: notifications } = useNotifications()
   const { toast } = useToast()
@@ -48,39 +47,17 @@ export function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
         <Menu className="size-5" />
       </button>
 
-      {/* Workspace selector */}
-      <Dropdown>
-        <DropdownTrigger asChild>
-          <button
-            type="button"
-            className="hidden w-[230px] items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 text-left shadow-sm transition-colors hover:bg-slate-50 md:flex"
-          >
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary-500 to-accent text-[10px] font-bold text-white">
-              HR
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] font-semibold text-navy-900">{org}</span>
-              <span className="block text-[10px] font-medium uppercase tracking-wide text-slate-400">Pro workspace</span>
-            </span>
-            <ChevronDown className="size-3.5 shrink-0 text-slate-400" aria-hidden />
-          </button>
-        </DropdownTrigger>
-        <DropdownContent align="start" className="w-[260px]">
-          <DropdownLabel>Workspaces</DropdownLabel>
-          {['Helix Research Institute', 'Meridian Pharma Group', 'Personal Research'].map((name) => (
-            <DropdownItem
-              key={name}
-              onSelect={() => {
-                setOrg(name)
-                toast({ title: 'Workspace switched', description: `Now viewing ${name}.`, tone: 'info' })
-              }}
-            >
-              <CircleDot className={name === org ? 'text-primary-600' : 'opacity-30'} />
-              <span className={cn(name === org && 'font-semibold')}>{name}</span>
-            </DropdownItem>
-          ))}
-        </DropdownContent>
-      </Dropdown>
+      <div className="hidden w-[230px] items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 md:flex">
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary-500 to-accent text-[10px] font-bold text-white">
+          {user?.initials ?? 'RS'}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13px] font-semibold text-navy-900">
+            {user?.organization || 'Personal research'}
+          </span>
+          <span className="block text-[10px] font-medium uppercase tracking-wide text-slate-400">Your workspace</span>
+        </span>
+      </div>
 
       {/* Global search */}
       <button
@@ -103,10 +80,10 @@ export function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
                 <span className="absolute inline-flex size-full animate-pulse-dot rounded-full bg-emerald-400" />
                 <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
               </span>
-              <span className="text-xs font-semibold text-emerald-700">Agents operational</span>
+              <span className="text-xs font-semibold text-emerald-700">Live public sources</span>
             </div>
           </TooltipTrigger>
-          <TooltipContent>All research agents online · last heartbeat 12s ago</TooltipContent>
+          <TooltipContent>PubMed, ClinicalTrials.gov, OpenFDA, and Disease Ontology are fetched on demand and refreshed every 15 minutes.</TooltipContent>
         </Tooltip>
 
         {/* Notifications */}

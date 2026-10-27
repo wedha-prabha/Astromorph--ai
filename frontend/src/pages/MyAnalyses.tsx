@@ -18,7 +18,7 @@ export function MyAnalysesPage() {
       <PageHeader
         eyebrow="Workspace"
         title="My analyses"
-        subtitle="Every drug–disease question you've asked ASTROMORPH, with its evidence status and outputs."
+        subtitle="Saved analysis history is not available yet. Live publications and trial records can be searched now."
         actions={
           <Button asChild>
             <Link to="/analyses/new"><Plus /> New Drug Analysis</Link>
@@ -33,8 +33,8 @@ export function MyAnalysesPage() {
       ) : !analyses || analyses.length === 0 ? (
         <EmptyState
           title="No analyses yet"
-          description="Start your first drug repurposing analysis — the agent pipeline will retrieve literature, map mechanisms, and synthesize an explainable evidence report."
-          action={<Button asChild><Link to="/analyses/new">Start New Analysis</Link></Button>}
+          description="This backend does not save analyses or generate reports yet. Start a research question to view live literature and clinical-trial records."
+          action={<Button asChild><Link to="/analyses/new">Explore live evidence</Link></Button>}
         />
       ) : (
         <Card>

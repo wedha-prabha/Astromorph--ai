@@ -8,11 +8,22 @@ the backend verifies each bearer token before returning protected data.
 
 1. Create and activate a Python virtual environment in `backend`.
 2. Install dependencies with `pip install -r requirements.txt`.
-3. Copy `.env.example` to `.env` and configure Firebase Admin credentials.
-4. Start the API with `uvicorn app.main:app --reload --env-file .env`.
+3. Copy `.env.example` to `.env` and configure Firebase Admin credentials and `GEMINI_API_KEY`.
+4. To run the API and frontend together, open a terminal in `frontend` and run
+   `npm run dev:all`. This starts FastAPI at `http://localhost:8000` and Vite
+   at `http://localhost:5173`; pressing Ctrl+C stops both.
+
+To run only the API from `backend`, use
+`python -m uvicorn app.main:app --reload --env-file .env`.
 
 The health check is available at `http://localhost:8000/healthz`, and the
 interactive API documentation is at `http://localhost:8000/docs`.
+
+The authenticated `POST /api/analysis/drug-summary` endpoint uses the Gemini
+API to generate a research-only drug/condition brief. Keep `GEMINI_API_KEY` in
+the backend `.env` only; never expose it through frontend environment variables.
+The response is AI-generated and is not a substitute for checking current
+primary literature or authoritative prescribing information.
 
 ## Configure Firebase Admin
 
@@ -40,7 +51,8 @@ signature, expiry, and revocation status and returns the authenticated identity.
 Missing or invalid credentials receive HTTP 401; unavailable Firebase
 configuration receives HTTP 503.
 
-This starter currently implements only `/healthz` and `/api/auth/me`; the
-frontend's research-data routes have not yet been ported. Keep
+This starter currently implements `/healthz`, `/api/auth/me`, and
+`/api/analysis/drug-summary`; the frontend's other research-data routes have
+not yet been ported. Keep
 `VITE_API_BASE_URL` empty to continue using the existing frontend mock-data
 adapter until those routes are implemented.

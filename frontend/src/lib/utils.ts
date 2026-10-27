@@ -10,9 +10,14 @@ export function delay(ms: number) {
 }
 
 export function formatRelativeTime(iso: string): string {
-  const now = new Date('2026-08-24T09:30:00')
   const then = new Date(iso)
+  if (Number.isNaN(then.getTime())) return 'Recently'
+
+  const now = new Date()
   const diffMs = now.getTime() - then.getTime()
+
+  if (diffMs < 0) return 'Just now'
+
   const minutes = Math.floor(diffMs / 60000)
   if (minutes < 1) return 'Just now'
   if (minutes < 60) return `${minutes}m ago`
@@ -25,6 +30,7 @@ export function formatRelativeTime(iso: string): string {
 }
 
 export function formatDate(iso: string): string {
+  if (!iso || Number.isNaN(new Date(iso).getTime())) return 'Date unavailable'
   return new Date(iso).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
