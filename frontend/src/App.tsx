@@ -14,7 +14,6 @@ import { NewAnalysisPage } from '@/pages/analyses/NewAnalysis'
 import { AnalysisProgressPage } from '@/pages/analyses/AnalysisProgress'
 import { AnalysisResultsPage } from '@/pages/analyses/AnalysisResults'
 import { MyAnalysesPage } from '@/pages/MyAnalyses'
-import { KnowledgeGraphPage } from '@/pages/KnowledgeGraphPage'
 import { DrugIntelligencePage } from '@/pages/DrugIntelligence'
 import { DiseaseIntelligencePage } from '@/pages/DiseaseIntelligence'
 import { ClinicalTrialsPage } from '@/pages/ClinicalTrials'
@@ -25,6 +24,7 @@ import { ReportViewerPage } from '@/pages/reports/ReportViewer'
 import { SavedResearchPage } from '@/pages/SavedResearch'
 import { SettingsPage } from '@/pages/Settings'
 import { NotFoundPage } from '@/pages/NotFound'
+import { PharmaceuticalIntelligencePage } from '@/pages/PharmaceuticalIntelligence'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -88,9 +88,9 @@ export default function App() {
                 <Route path="/analyses/:id" element={<AnalysisResultsPage />} />
                 <Route path="/drugs" element={<DrugIntelligencePage />} />
                 <Route path="/diseases" element={<DiseaseIntelligencePage />} />
-                <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
                 <Route path="/trials" element={<ClinicalTrialsPage />} />
                 <Route path="/literature" element={<LiteratureExplorerPage />} />
+                <Route path="/pharmaceutical-intelligence" element={<PharmaceuticalIntelligencePage />} />
                 <Route path="/agents" element={<AgentObservatoryPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/reports/:id" element={<ReportViewerPage />} />

@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
-import { AlertCircle, ArrowRight, Beaker, BookOpenText, Lightbulb, LoaderCircle, Sparkles, Stethoscope, Timer } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { AlertCircle, ArrowRight, Beaker, BookOpenText, Download, FileText, Lightbulb, LoaderCircle, Sparkles, Stethoscope, Timer } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useDrugSummary } from '@/api/hooks'
+import { endpoints } from '@/api/endpoints'
+import { useAuth } from '@/auth/AuthContext'
 import { DisclaimerBanner } from '@/components/shared/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input, Label, Textarea } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
 import { useDrugs } from '@/api/hooks'
+import { createDrugResearchReport, type SavedAnalysisReport } from '@/lib/savedAnalysisReports'
 
 export function NewAnalysisPage() {
   const [drugName, setDrugName] = useState('Montelukast')
@@ -15,7 +18,9 @@ export function NewAnalysisPage() {
   const [objective, setObjective] = useState('Evaluate the potential of Montelukast for repurposing in COPD.')
   const [debouncedInput, setDebouncedInput] = useState<{ drugName: string; diseaseName: string; objective: string } | null>(null)
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { toast } = useToast()
+  const [generatedReport, setGeneratedReport] = useState<SavedAnalysisReport | null>(null)
   const { data: drugs } = useDrugs(drugName)
   const drugSummary = useDrugSummary(debouncedInput)
 
@@ -42,6 +47,72 @@ export function NewAnalysisPage() {
     debouncedInput?.drugName === drugName.trim() &&
     debouncedInput?.diseaseName === diseaseName.trim() &&
     debouncedInput?.objective === objective.trim()
+
+  async function generateReport() {
+    if (!user || !debouncedInput || !drugSummary.data || !summaryMatchesCurrentInput) return
+    try {
+      let structuredReport
+      let structuredDataError: string | null = null
+      try {
+        structuredReport = await endpoints.getPharmaceuticalIntelligence({
+          drugName: debouncedInput.drugName,
+          diseaseName: debouncedInput.diseaseName,
+        })
+      } catch (error) {
+        structuredDataError = error instanceof Error
+          ? error.message
+          : 'Structured drug profile and safety information could not be retrieved.'
+      }
+      const savedReport = createDrugResearchReport(
+        user.id,
+        debouncedInput,
+        drugSummary.data,
+        structuredReport,
+      )
+      setGeneratedReport(savedReport)
+      toast({
+        title: structuredDataError ? 'Report generated with limited data' : 'Report generated',
+        description: structuredDataError
+          ? `Structured drug information was unavailable: ${structuredDataError} The report labels missing assessments as unverified.`
+          : 'Your structured research report is saved in the Reports tab.',
+        tone: structuredDataError ? 'warning' : 'success',
+      })
+    } catch (error) {
+      toast({
+        title: 'Could not save report',
+        description: error instanceof Error ? error.message : 'Browser storage could not save this report.',
+        tone: 'warning',
+      })
+    }
+  }
+
+  function downloadGeneratedReport() {
+    if (!generatedReport) return
+    const markdown = [
+      `# ${generatedReport.report.title}`,
+      generatedReport.report.subtitle,
+      '',
+      `Generated ${new Date(generatedReport.createdAt).toLocaleString()}`,
+      '',
+      ...generatedReport.report.sections.slice(0, 12).flatMap((section) => [
+        `## ${section.number}. ${section.title}`,
+        '',
+        ...section.paragraphs,
+        ...(section.callout ? ['', `**${section.callout.title}:** ${section.callout.text}`] : []),
+        '',
+      ]),
+      '## 13. Sources and References',
+      '',
+      ...generatedReport.report.references.map((reference) => `- ${reference.citation}`),
+    ].join('\n')
+    const url = URL.createObjectURL(new Blob([markdown], { type: 'text/markdown;charset=utf-8' }))
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `astromorph-report-${generatedReport.id}.md`
+    anchor.click()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    toast({ title: 'Report downloaded', description: 'The Markdown report is ready to open or share.' })
+  }
 
   function handleStart() {
     if (!drugName.trim() || !diseaseName.trim()) {
@@ -72,7 +143,7 @@ export function NewAnalysisPage() {
               <Label htmlFor="drug" className="flex items-center gap-1.5">
                 <Beaker className="size-3.5 text-primary-600" aria-hidden /> Drug name
               </Label>
-              <Input id="drug" list="drug-suggestions" placeholder="e.g., Montelukast" value={drugName} onChange={(e) => setDrugName(e.target.value)} />
+              <Input id="drug" list="drug-suggestions" placeholder="e.g., Montelukast" value={drugName} onChange={(e) => { setDrugName(e.target.value); setGeneratedReport(null) }} />
               <datalist id="drug-suggestions">
                 {(drugs ?? []).map((d) => (
                   <option key={d.id} value={d.name} />
@@ -83,7 +154,7 @@ export function NewAnalysisPage() {
               <Label htmlFor="disease" className="flex items-center gap-1.5">
                 <Stethoscope className="size-3.5 text-primary-600" aria-hidden /> Disease / condition
               </Label>
-              <Input id="disease" list="disease-suggestions" placeholder="e.g., COPD" value={diseaseName} onChange={(e) => setDiseaseName(e.target.value)} />
+              <Input id="disease" list="disease-suggestions" placeholder="e.g., COPD" value={diseaseName} onChange={(e) => { setDiseaseName(e.target.value); setGeneratedReport(null) }} />
             </div>
           </div>
 
@@ -109,9 +180,42 @@ export function NewAnalysisPage() {
                   : 'The drug summary could not be generated. Please try again.'}
               </p>
             ) : summaryMatchesCurrentInput && drugSummary.data ? (
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                {drugSummary.data.summary}
-              </p>
+              <>
+                {drugSummary.data.summarySource === 'retrieved_evidence' && (
+                  <p className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900" role="status">
+                    <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+                    AI synthesis is unavailable or incomplete. Showing matching source records only; this is not a synthesized assessment of treatment efficacy.
+                  </p>
+                )}
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                  {drugSummary.data.summary}
+                </p>
+                {!!drugSummary.data.analysisProcess?.length && (
+                  <div className="mt-4 rounded-lg border border-line bg-white/70 p-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">How this analysis was prepared</h4>
+                    <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs leading-relaxed text-mutedfg">
+                      {drugSummary.data.analysisProcess.map((step) => <li key={step}>{step}</li>)}
+                    </ol>
+                  </div>
+                )}
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-primary-100 pt-4">
+                  {!generatedReport ? (
+                    <Button type="button" size="sm" onClick={generateReport} disabled={!summaryMatchesCurrentInput}>
+                      <FileText aria-hidden /> Generate readable report
+                    </Button>
+                  ) : (
+                    <>
+                      <Button type="button" size="sm" onClick={downloadGeneratedReport}>
+                        <Download aria-hidden /> Download report
+                      </Button>
+                      <Button asChild type="button" size="sm" variant="outline">
+                        <Link to={`/reports/${encodeURIComponent(generatedReport.id)}`}>Open saved report <ArrowRight /></Link>
+                      </Button>
+                      <span className="text-xs text-emerald-700" role="status">Saved in Reports</span>
+                    </>
+                  )}
+                </div>
+              </>
             ) : (
               <p className="mt-3 text-sm text-mutedfg">Waiting for you to finish typing…</p>
             )}
@@ -125,7 +229,7 @@ export function NewAnalysisPage() {
             <Textarea
               id="objective"
               value={objective}
-              onChange={(e) => setObjective(e.target.value)}
+              onChange={(e) => { setObjective(e.target.value); setGeneratedReport(null) }}
               placeholder="Describe what you want to evaluate — e.g., mechanism relevance, safety constraints, target patient phenotype…"
             />
           </div>

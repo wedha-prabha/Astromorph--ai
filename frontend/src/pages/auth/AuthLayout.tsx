@@ -5,7 +5,7 @@ import { Logo } from '@/components/layout/Logo'
 
 const highlights = [
   'Nine-agent explainable research pipelines',
-  'Biomedical knowledge graph exploration',
+  'Source-linked biomedical literature and trial evidence',
   'Evidence scoring with safety integration',
 ]
 

@@ -9,7 +9,6 @@ import type {
   Drug,
   EvidenceSource,
   KpiStat,
-  KnowledgeGraphData,
   NotificationItem,
   Paper,
   ResearchReport,
@@ -30,12 +29,18 @@ export const endpoints = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  getPharmaceuticalIntelligence: (input: PharmaceuticalIntelligenceRequest) =>
+    apiRequest<PharmaceuticalIntelligenceReport>('/api/pharmaceutical-intelligence', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  searchDrugSuggestions: (query: string) =>
+    apiRequest<DrugSuggestion[]>(withQ('/api/drug-suggestions', { query })),
   listAnalyses: () => apiRequest<AnalysisSummary[]>('/api/analyses'),
   getAnalysis: (id: string) => apiRequest<Analysis>(`/api/analyses/${id}`),
   getAnalysisAgents: (id: string) => apiRequest<AgentRun[]>(`/api/analyses/${id}/agents`),
   getAnalysisEvidence: (id: string, type?: string) =>
     apiRequest<EvidenceSource[]>(withQ(`/api/analyses/${id}/evidence`, { type })),
-  getKnowledgeGraph: (id: string) => apiRequest<KnowledgeGraphData>(`/api/analyses/${id}/knowledge-graph`),
   getReport: (id: string) => apiRequest<ResearchReport>(`/api/analyses/${id}/report`),
   createAnalysis: (input: AnalysisInput) =>
     apiRequest<Analysis>('/api/analyses', {
@@ -66,10 +71,164 @@ export interface DrugSummaryInput {
   drugName: string
   diseaseName: string
   objective?: string
+  symptoms?: string
+  country?: string
+  currentMedications?: string[]
+  patientRiskFactors?: string
 }
 
 export interface DrugSummary {
   summary: string
+  summarySource?: 'gemini' | 'retrieved_evidence'
+  analysisProcess?: string[]
+  sources?: { title: string; publisher: string; url: string }[]
+  generatedAt?: string
+}
+
+export interface PharmaceuticalIntelligenceRequest {
+  query?: string
+  diseaseName?: string
+  symptoms?: string
+  drugName?: string
+  brandName?: string
+  country?: string
+  researchFocus?: string
+  currentMedications?: string[]
+  patientRiskFactors?: string
+}
+
+export interface DrugSuggestion {
+  productNdc: string
+  brandName: string | null
+  genericName: string | null
+  activeIngredients: { name: string; strength: string | null }[]
+  dosageForm: string | null
+  sourceUrl: string
+  source: string
+  limitation: string
+}
+
+export interface PharmaSource {
+  title: string
+  publisher: string
+  url: string
+  retrievedAt: string
+  publicationDate: string | null
+  retrievalStatus: 'retrieved' | 'unavailable'
+}
+
+export interface PharmaceuticalIntelligenceReport {
+  query: {
+    original: string
+    type: 'disease' | 'symptoms' | 'drug' | 'brand' | 'combined' | 'unknown'
+    normalizedEntities: { kind: string; value: string }[]
+    ambiguities: string[]
+  }
+  summary: string | null
+  synthesisStatus: 'available' | 'unavailable'
+  synthesisError: string | null
+  diseaseResearch: { name: string; description: string; sourceUrl: string }[]
+  medicines: {
+    genericName: string | null
+    drugClass: string | null
+    brandNames: string[]
+    activeIngredients: string[]
+    composition: {
+      productName: string | null
+      activeIngredients: { name: string; strength: string | null }[]
+      excipients: string[]
+      dosageForm: string | null
+      manufacturer: string | null
+      market: string
+      marketingStartDate: string | null
+      marketingEndDate: string | null
+      listingExpirationDate: string | null
+      marketingCategory: string | null
+      sourceUrl: string
+      listingNote: string
+    }[]
+    labelIndications: string | null
+    approvedIndications: string[]
+    contraindications: string[]
+    precautions: string[]
+    safetyInformation: string[]
+    labelSections: Record<string, string>
+    countryStatus: RegulatoryFinding[]
+    sources: PharmaSource[]
+  }[]
+  interactions: {
+    medicineA: string
+    medicineB: string
+    severity: 'contraindicated' | 'major' | 'moderate' | 'minor' | 'none_identified' | 'unknown'
+    interactionType: string
+    clinicalConsequences: string
+    mechanism: string
+    riskFactors: string[]
+    recommendedReview: string
+    sourceUrls: string[]
+    verificationRequired: boolean
+  }[]
+  patientRiskAssessment: {
+    status: 'not_assessed' | 'source_information_available'
+    suppliedFactors: string[]
+    notes: string[]
+  }
+  regulatoryFindings: RegulatoryFinding[]
+  researchEvidence: {
+    title: string
+    evidenceType: string
+    summary: string
+    url: string
+    publicationDate: string | null
+  }[]
+  clinicalTrials: {
+    nctId: string
+    title: string
+    phase: string
+    status: string
+    summary: string
+    url: string
+    lastUpdated: string | null
+  }[]
+  suitability: {
+    overallScore: number | null
+    classification: string
+    evidenceConfidence: 'High' | 'Moderate' | 'Low' | 'Insufficient'
+    evidenceCoverage: number
+    scoreBreakdown: {
+      name: string
+      weight: number
+      score: number | null
+      rationale: string
+      sourceUrls: string[]
+    }[]
+    relevantStudiesCount: number | null
+    relevantHumanStudiesCount: number | null
+    recordsRetrieved: number
+    clinicalTrialsCount: number
+    findingsAgree: boolean | null
+    safetyInformationUnknown: boolean
+    safetyOverride: boolean
+    finalAssessment: string
+    limitations: string[]
+  }
+  sources: PharmaSource[]
+  limitations: string[]
+  generatedAt: string
+}
+
+export interface RegulatoryFinding {
+  medicine: string
+  country: string
+  status: 'approved' | 'restricted' | 'suspended' | 'withdrawn' | 'banned' | 'not_approved' | 'unknown'
+  restrictionType: string
+  effectiveDate: string | null
+  reason: string | null
+  scope: string
+  authority: string | null
+  sourceUrl: string | null
+  verificationStatus: 'verified' | 'partially_verified' | 'conflicting' | 'unverified'
+  lastChecked: string
 }
 
 export interface SearchResults<T> {

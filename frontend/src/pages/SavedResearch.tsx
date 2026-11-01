@@ -1,4 +1,4 @@
-import { BookOpenText, FileText, FlaskConical, Network, Star } from 'lucide-react'
+import { BookOpenText, FileText, FlaskConical, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { EmptyState, LoadingState } from '@/components/shared/states'
@@ -11,7 +11,6 @@ const kindMeta = {
   analysis: { icon: FileText, label: 'Analysis', to: (id: string) => '/analyses/AST-2026-001' },
   paper: { icon: BookOpenText, label: 'Publication', to: () => '/literature' },
   trial: { icon: FlaskConical, label: 'Clinical trial', to: () => '/trials' },
-  'graph-view': { icon: Network, label: 'Graph view', to: () => '/knowledge-graph' },
 } as const
 
 export function SavedResearchPage() {
@@ -22,7 +21,7 @@ export function SavedResearchPage() {
       <PageHeader
         eyebrow="Workspace"
         title="Saved research"
-        subtitle="Bookmarked analyses, publications, trials, and graph views collected during your investigation."
+        subtitle="Bookmarked analyses, publications, and trials collected during your investigation."
       />
 
       {isLoading ? (

@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpenText, FileText, GitBranch, Info, Network, ShieldCheck } from 'lucide-react'
+import { ArrowRight, BookOpenText, FileText, GitBranch, Info, ShieldCheck } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip as ReTooltip, XAxis, YAxis } from 'recharts'
@@ -60,11 +60,6 @@ export function AnalysisResultsPage() {
           </div>
         </div>
         <div className="grid shrink-0 grid-cols-3 gap-2 no-print">
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/knowledge-graph?analysis=${analysis.id}`}>
-              <Network /> Graph
-            </Link>
-          </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to={`/trials?drug=Montelukast`}>
               <GitBranch /> Trials

@@ -6,7 +6,6 @@ export const queryKeys = {
   analysis: (id: string) => ['analysis', id] as const,
   agents: (id: string) => ['agents', id] as const,
   evidence: (id: string, type?: string) => ['evidence', id, type ?? 'all'] as const,
-  graph: (id: string) => ['graph', id] as const,
   report: (id: string) => ['report', id] as const,
   activity: ['activity'] as const,
   drugs: (query: string) => ['drugs', query] as const,
@@ -50,12 +49,12 @@ export function useEvidence(id: string | undefined, type?: string) {
   })
 }
 
-export function useKnowledgeGraph(id: string | undefined) {
-  return useQuery({ queryKey: queryKeys.graph(id ?? ''), queryFn: () => endpoints.getKnowledgeGraph(id!), enabled: !!id })
-}
-
-export function useReport(id: string | undefined) {
-  return useQuery({ queryKey: queryKeys.report(id ?? ''), queryFn: () => endpoints.getReport(id!), enabled: !!id })
+export function useReport(id: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.report(id ?? ''),
+    queryFn: () => endpoints.getReport(id!),
+    enabled: !!id && enabled,
+  })
 }
 
 export function useActivity() {

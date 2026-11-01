@@ -159,7 +159,6 @@ export const savedItems = [
   { id: 'sv-1', kind: 'analysis' as const, title: 'Montelukast → COPD', meta: 'Analysis AST-2026-001 · Strong Evidence (87/100)', savedAt: '2026-08-22T10:14:00Z' },
   { id: 'sv-2', kind: 'paper' as const, title: 'Leukotriene modifiers in COPD: systematic review & meta-analysis', meta: 'Chest · 2021 · Meta-analysis · Relevance 94%', savedAt: '2026-08-23T09:02:00Z' },
   { id: 'sv-3', kind: 'trial' as const, title: 'NCT04635174 — MAAC Study', meta: 'Phase 2 · Completed · Helix Research Institute', savedAt: '2026-08-23T15:40:00Z' },
-  { id: 'sv-4', kind: 'graph-view' as const, title: 'Leukotriene–COPD sub-network', meta: 'Knowledge graph view · 15 nodes · 18 relations', savedAt: '2026-08-24T07:31:00Z' },
 ]
 
 export const notifications = [
