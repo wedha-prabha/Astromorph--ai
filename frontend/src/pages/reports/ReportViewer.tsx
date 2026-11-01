@@ -1,18 +1,54 @@
 import { ArrowLeft, Download, Link2, Share2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useAuth } from '@/auth/AuthContext'
 import { DisclaimerBanner } from '@/components/shared/PageHeader'
 import { ErrorState, LoadingState } from '@/components/shared/states'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { useReport } from '@/api/hooks'
+import { getSavedAnalysisReport } from '@/lib/savedAnalysisReports'
+
+function renderSourceLinks(text: string) {
+  const urlPattern = /(https?:\/\/[^\s)]+)/g
+  const parts = text.split(urlPattern)
+  return parts.map((part, index) => (
+    /^https?:\/\//i.test(part)
+      ? <a key={`${index}-${part}`} href={part.replace(/[.,;]+$/, '')} target="_blank" rel="noreferrer" className="text-primary-700 underline break-all">{part.replace(/[.,;]+$/, '')}</a>
+      : part
+  ))
+}
 
 export function ReportViewerPage() {
   const { id } = useParams()
-  const { data: report, isLoading, isError, refetch } = useReport(id)
-  const { toast } = useToast()
+  const { user } = useAuth()
+  const [savedReport, setSavedReport] = useState<Awaited<ReturnType<typeof getSavedAnalysisReport>>>(null)
+  const [lookupComplete, setLookupComplete] = useState(false)
+  const [savedReportError, setSavedReportError] = useState<string | null>(null)
+  useEffect(() => {
+    setLookupComplete(false)
+    setSavedReport(null)
+    setSavedReportError(null)
+    if (!user || !id) {
+      setLookupComplete(true)
+      return
+    }
 
-  if (isLoading) return <LoadingState rows={6} label="Loading report" />
+    try {
+      setSavedReport(getSavedAnalysisReport(user.id, decodeURIComponent(id)))
+    } catch (error) {
+      setSavedReportError(error instanceof Error ? error.message : 'Saved report could not be loaded.')
+    } finally {
+      setLookupComplete(true)
+    }
+  }, [id, user])
+  const { data: remoteReport, isLoading, isError, refetch } = useReport(id, lookupComplete && !savedReport && !savedReportError)
+  const { toast } = useToast()
+  const report = savedReport?.report ?? remoteReport
+
+  if (!lookupComplete || (isLoading && !report)) return <LoadingState rows={6} label="Loading report" />
+  if (savedReportError) return <ErrorState message={savedReportError} />
   if (isError || !report) return <ErrorState onRetry={() => refetch()} />
 
   function exportMarkdown() {
@@ -23,8 +59,9 @@ export function ReportViewerPage() {
       ``,
       `Generated ${new Date(report.generatedAt).toDateString()} · Analysis ${report.analysisId}`,
       ``,
-      ...report.sections.flatMap((s) => [`## ${s.number}. ${s.title}`, '', ...s.paragraphs.map((p) => p), '']),
-      `## References`,
+      ...report.sections.filter((section) => section.number !== 13)
+        .flatMap((s) => [`## ${s.number}. ${s.title}`, '', ...s.paragraphs.map((p) => p), '']),
+      `## 13. Sources and References`,
       '',
       ...report.references.map((r) => `- ${r.citation}`),
     ].join('\n')
@@ -73,7 +110,7 @@ export function ReportViewerPage() {
         <nav className="top-20 hidden self-start lg:sticky lg:block no-print" aria-label="Report sections">
           <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Contents</p>
           <ol className="space-y-1.5 border-l border-line text-[13px]">
-            {report.sections.map((s) => (
+            {report.sections.slice(0, 12).map((s) => (
               <li key={s.id}>
                 <a href={`#sec-${s.number}`} className="-ml-px block border-l-2 border-transparent pl-3 py-0.5 text-mutedfg transition-colors hover:border-primary-500 hover:text-primary-700">
                   {s.number}. {s.title}
@@ -82,7 +119,7 @@ export function ReportViewerPage() {
             ))}
             <li>
               <a href="#references" className="-ml-px block border-l-2 border-transparent pl-3 py-0.5 text-mutedfg transition-colors hover:border-primary-500 hover:text-primary-700">
-                References
+                Sources and References
               </a>
             </li>
           </ol>
@@ -113,7 +150,7 @@ export function ReportViewerPage() {
                   </h2>
                   <div className="mt-3 space-y-3.5">
                     {section.paragraphs.map((para, i) => (
-                      <p key={i} className="max-w-none text-[14.5px] leading-[1.75] text-navy-800">{para}</p>
+                      <p key={i} className="max-w-none text-[14.5px] leading-[1.75] text-navy-800">{renderSourceLinks(para)}</p>
                     ))}
                   </div>
                   {section.callout && (
@@ -127,12 +164,12 @@ export function ReportViewerPage() {
 
               <section id="references">
                 <h2 className="flex items-baseline gap-3 text-lg font-bold tracking-tight">
-                  <span className="font-mono text-sm text-primary-600">13</span> References
+                  <span className="font-mono text-sm text-primary-600">13</span> Sources and References
                 </h2>
                 <ol className="mt-4 space-y-2.5 text-[13px] leading-relaxed text-mutedfg">
                   {report.references.map((ref, i) => (
                     <li key={ref.id} className="pl-8 -indent-8">
-                      [{i + 1}] {ref.citation}
+                      [{i + 1}] {renderSourceLinks(ref.citation)}
                     </li>
                   ))}
                 </ol>
@@ -140,9 +177,9 @@ export function ReportViewerPage() {
             </div>
 
             <footer className="mt-10 border-t border-line pt-5 text-xs leading-relaxed text-slate-400">
-              This report was generated by ASTROMORPH's agent pipeline using public biomedical data sources. Evidence
-              scores quantify research-evidence strength only and are not predictions of clinical efficacy. Human expert
-              review is required before any research or regulatory decision-making.
+              ASTROMORPH reports summarize source-backed research information and explicitly label missing assessments.
+              A research score is not a prediction of clinical efficacy or a measure of individual safety. Consult
+              qualified clinical and regulatory professionals for decisions.
             </footer>
           </CardContent>
         </Card>

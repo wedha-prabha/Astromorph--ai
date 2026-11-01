@@ -1,4 +1,4 @@
-import { Activity, BookOpenText, FlaskConical, Network, Pill, Search, Stethoscope } from 'lucide-react'
+import { Activity, BookOpenText, FlaskConical, Pill, Search, Stethoscope } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -17,8 +17,7 @@ const pages: Result[] = [
   { id: 'pg-1', label: 'New Analysis', sub: 'Start a repurposing workflow', kind: 'Page', to: '/analyses/new' },
   { id: 'pg-2', label: 'Clinical Trials', sub: 'Explorer', kind: 'Page', to: '/trials' },
   { id: 'pg-3', label: 'Literature Explorer', sub: 'Biomedical publications', kind: 'Page', to: '/literature' },
-  { id: 'pg-4', label: 'Knowledge Graph', sub: 'Montelukast → COPD network', kind: 'Page', to: '/knowledge-graph' },
-  { id: 'pg-5', label: 'Agent Observatory', sub: 'Live agent orchestration', kind: 'Page', to: '/agents' },
+  { id: 'pg-4', label: 'Agent Observatory', sub: 'Live agent orchestration', kind: 'Page', to: '/agents' },
 ]
 
 const kindIcons = { Analysis: Activity, Drug: Pill, Disease: Stethoscope, Page: BookOpenText }

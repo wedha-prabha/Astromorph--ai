@@ -5,10 +5,10 @@ import {
   GitBranch,
   LayoutDashboard,
   LifeBuoy,
-  Network,
   Pill,
   PlusCircle,
   ScrollText,
+  ShieldCheck,
   Settings as SettingsIcon,
   Star,
   Stethoscope,
@@ -32,7 +32,6 @@ export const navSections = [
     items: [
       { to: '/drugs', icon: Pill, label: 'Drug Intelligence' },
       { to: '/diseases', icon: Stethoscope, label: 'Disease Intelligence' },
-      { to: '/knowledge-graph', icon: Network, label: 'Knowledge Graph' },
     ],
   },
   {
@@ -40,6 +39,7 @@ export const navSections = [
     items: [
       { to: '/trials', icon: FlaskConical, label: 'Clinical Trials' },
       { to: '/literature', icon: BookOpenText, label: 'Literature' },
+      { to: '/pharmaceutical-intelligence', icon: ShieldCheck, label: 'Pharma Safety' },
       { to: '/agents', icon: GitBranch, label: 'Data Sources' },
     ],
   },

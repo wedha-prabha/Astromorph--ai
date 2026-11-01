@@ -87,39 +87,6 @@ export interface EvidenceSource {
   citation: string
 }
 
-export type KgNodeType =
-  | 'drug'
-  | 'disease'
-  | 'protein'
-  | 'gene'
-  | 'pathway'
-  | 'process'
-  | 'trial'
-  | 'paper'
-  | 'adverse'
-
-export interface KgNode {
-  id: ID
-  label: string
-  type: KgNodeType
-  evidenceCount: number
-  description: string
-}
-
-export interface KgEdge {
-  id: ID
-  source: ID
-  target: ID
-  relation: string
-  evidenceCount: number
-}
-
-export interface KnowledgeGraphData {
-  analysisId: ID
-  nodes: KgNode[]
-  edges: KgEdge[]
-}
-
 export interface DrugTarget {
   name: string
   kind: string
@@ -241,7 +208,7 @@ export interface ResearchReport {
 
 export interface SavedItem {
   id: ID
-  kind: 'analysis' | 'paper' | 'trial' | 'graph-view'
+  kind: 'analysis' | 'paper' | 'trial'
   title: string
   meta: string
   savedAt: string

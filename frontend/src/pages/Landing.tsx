@@ -5,7 +5,6 @@ import {
   FlaskConical,
   GitBranch,
   LockKeyhole,
-  Network,
   PlayCircle,
   ScrollText,
   ShieldCheck,
@@ -70,9 +69,9 @@ const features = [
     text: 'Nine specialized agents retrieve literature, extract entities, map pathways, screen trials, and score evidence — each step explainable and auditable.',
   },
   {
-    icon: Network,
-    title: 'Biomedical Knowledge Graph',
-    text: 'Explore drugs, targets, pathways, diseases, and outcomes as an interconnected graph built from public biomedical sources.',
+    icon: BookOpenText,
+    title: 'Source-Linked Research',
+    text: 'Review retrieved drug labels, publications, and trial records with clear links and explicit evidence limitations.',
   },
   {
     icon: BookOpenText,
@@ -99,7 +98,7 @@ const features = [
 const agentSteps = [
   { n: '01', title: 'Define', text: 'Enter a drug–disease pair and research objective.' },
   { n: '02', title: 'Retrieve', text: 'Agents query PubMed, ClinicalTrials.gov, FDA, DrugBank.' },
-  { n: '03', title: 'Synthesize', text: 'NLP extracts relationships into the knowledge graph.' },
+  { n: '03', title: 'Synthesize', text: 'Summaries retain links to retrieved records and make uncertainty visible.' },
   { n: '04', title: 'Score & Report', text: 'Weighted evidence scoring produces an explainable report.' },
 ]
 
@@ -140,7 +139,7 @@ export function LandingPage() {
               <span className="bg-gradient-to-r from-primary-600 to-accent bg-clip-text text-transparent">Existing Drugs.</span>
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-pretty text-base leading-relaxed text-mutedfg sm:text-lg">
-              ASTROMORPH uses Agentic AI, biomedical knowledge graphs, and evidence-based research analysis to accelerate
+              ASTROMORPH uses AI-assisted workflows and source-backed research analysis to support
               drug repurposing discovery.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -194,7 +193,7 @@ export function LandingPage() {
               From research question to explainable insight
             </h2>
             <p className="mt-3 leading-relaxed text-mutedfg">
-              ASTROMORPH combines agentic workflows, a biomedical knowledge graph, and transparent evidence scoring so
+              ASTROMORPH combines research workflows and transparent evidence reporting so
               research teams can prioritize repurposing hypotheses with confidence.
             </p>
           </div>
