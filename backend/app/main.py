@@ -613,7 +613,7 @@ def summarize_drug(
     payload = {
         "systemInstruction": {"parts": [{"text": GEMINI_SYSTEM_INSTRUCTION}]},
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 900},
+        "generationConfig": {"maxOutputTokens": 900},
     }
     gemini_request = Request(
         f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
@@ -625,10 +625,47 @@ def summarize_drug(
     try:
         with urlopen(gemini_request, timeout=30) as response:
             result = json.loads(response.read())
+feature/add-backend
     except HTTPError:
         return summary_response(_fallback_drug_summary(papers, trials, label), "retrieved_evidence")
     except (URLError, TimeoutError, json.JSONDecodeError):
         return summary_response(_fallback_drug_summary(papers, trials, label), "retrieved_evidence")
+=======
+    except HTTPError as exc:
+        try:
+            error_body = json.loads(exc.read().decode("utf-8", errors="replace"))
+            google_error = error_body.get("error", {}) if isinstance(error_body, dict) else {}
+            google_message = google_error.get("message", "No error message returned.")
+            google_status = google_error.get("status", "UNKNOWN")
+        except (json.JSONDecodeError, AttributeError, TypeError):
+            google_message = "Google returned an unreadable error response."
+            google_status = "UNKNOWN"
+
+        # Never log request headers or the Gemini API key.
+        print(
+            f"Gemini API request failed: HTTP {exc.code}; "
+            f"status={google_status}; message={google_message}"
+        )
+        if exc.code == 400:
+            detail = f"Gemini rejected the request (HTTP 400): {google_message}"
+        elif exc.code in (401, 403):
+            detail = f"Gemini authentication/permission error (HTTP {exc.code}): {google_message}"
+        elif exc.code == 404:
+            detail = f"Gemini model or endpoint not found (HTTP 404): {google_message}. Check GEMINI_MODEL."
+        elif exc.code == 429:
+            detail = f"Gemini quota/rate-limit error (HTTP 429): {google_message}"
+        else:
+            detail = f"Gemini API error (HTTP {exc.code}): {google_message}"
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=detail,
+        ) from exc
+    except (URLError, TimeoutError, json.JSONDecodeError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Gemini is temporarily unavailable. Please try again.",
+        ) from exc
+main
 
     candidates = result.get("candidates", []) if isinstance(result, dict) else []
     if not isinstance(candidates, list):
