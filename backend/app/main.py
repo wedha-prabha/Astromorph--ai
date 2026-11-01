@@ -308,7 +308,7 @@ def summarize_drug(
     payload = {
         "systemInstruction": {"parts": [{"text": GEMINI_SYSTEM_INSTRUCTION}]},
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 900},
+        "generationConfig": {"maxOutputTokens": 900},
     }
     gemini_request = Request(
         f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
