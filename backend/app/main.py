@@ -295,7 +295,7 @@ def summarize_drug(
     except LiveSourceError as exc:
         raise _source_failure(exc) from exc
 
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip() or "gemini-2.5-flash"
+    model = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip() or "gemini-3.6-flash"
     prompt = (
         f"Medicine: {request.drugName.strip()}\n"
         f"Condition: {request.diseaseName.strip()}\n"

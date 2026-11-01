@@ -22,6 +22,8 @@ interactive API documentation is at `http://localhost:8000/docs`.
 The authenticated `POST /api/analysis/drug-summary` endpoint uses the Gemini
 API to generate a research-only drug/condition brief. Keep `GEMINI_API_KEY` in
 the backend `.env` only; never expose it through frontend environment variables.
+The default model is `gemini-3.6-flash`; override it with `GEMINI_MODEL` only
+when the selected model is available for content generation with your API key.
 The response is AI-generated and is not a substitute for checking current
 primary literature or authoritative prescribing information.
 
